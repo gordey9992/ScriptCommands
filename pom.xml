@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>ScriptCommands</name>
-    <description>Dynamic script-based commands for Minecraft Purpur 1.21.11</description>
+    <description>Dynamic script-based commands for Purpur 1.21.11</description>
     <url>https://github.com/gordey9992/ScriptCommands</url>
 
     <properties>
@@ -23,7 +23,7 @@
     <repositories>
         <repository>
             <id>purpur</id>
-            <url>https://repo.purpurmc.org/snapshots</url>
+            <url>https://repo.purpurmc.org/releases</url>  <!-- releases, не snapshots! -->
         </repository>
     </repositories>
 
@@ -31,7 +31,7 @@
         <dependency>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
-            <version>1.21.1-R0.2-SNAPSHOT</version>
+            <version>1.21.11</version>  <!-- точная версия, без SNAPSHOT -->
             <scope>provided</scope>
         </dependency>
     </dependencies>
