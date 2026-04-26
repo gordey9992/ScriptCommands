@@ -2,6 +2,7 @@ package me.gordey9992.scriptcommands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.*;
+import org.bukkit.plugin.Plugin;  // ← ДОБАВИТЬ ЭТУ СТРОКУ!
 import org.bukkit.plugin.java.JavaPlugin;
 import java.io.*;
 import java.nio.file.*;
@@ -42,7 +43,6 @@ public class ScriptLoader {
     }
     
     private void createExampleScripts() {
-        // Пример команды fly
         String flyScript = """
             import org.bukkit.command.*;
             import org.bukkit.entity.Player;
@@ -60,7 +60,6 @@ public class ScriptLoader {
             }
             """;
         
-        // Пример команды heal
         String healScript = """
             import org.bukkit.command.*;
             import org.bukkit.entity.Player;
@@ -112,7 +111,6 @@ public class ScriptLoader {
                 return;
             }
             
-            // Проверка лимита скриптов
             int maxScripts = configManager.getMaxScripts();
             if (maxScripts > 0 && javaFiles.size() > maxScripts) {
                 plugin.getLogger().warning("Количество скриптов (" + javaFiles.size() + 
@@ -140,16 +138,12 @@ public class ScriptLoader {
             String fileName = javaFile.getFileName().toString();
             String commandName = fileName.replace(".java", "").toLowerCase();
             
-            // Сохраняем timestamp для авто-перезагрузки
             scriptTimestamps.put(commandName, Files.getLastModifiedTime(javaFile).toMillis());
             
-            // Компилируем скрипт
             CommandExecutor executor = compiler.compile(javaFile, commandName);
             
             if (executor != null) {
-                // Регистрируем команду через Bukkit (правильный способ!)
                 registerCommand(commandName, executor);
-                
                 loadedCommands.put(commandName, executor);
                 plugin.getLogger().info("✓ Команда '/" + commandName + "' загружена из " + fileName);
                 return true;
@@ -164,33 +158,21 @@ public class ScriptLoader {
         return false;
     }
     
-    // ПРАВИЛЬНЫЙ способ регистрации команды без прямого вызова конструктора
     private void registerCommand(String commandName, CommandExecutor executor) {
-        // Получаем CommandMap через рефлексию
         try {
             CommandMap commandMap = Bukkit.getCommandMap();
-            
-            // Создаем объект команды через рефлексию (обходим приватный конструктор)
-            PluginCommand command = null;
-            
-            // Пытаемся получить существующую команду из plugin.yml
-            command = plugin.getCommand(commandName);
+            PluginCommand command = plugin.getCommand(commandName);
             
             if (command == null) {
-                // Если команды нет в plugin.yml, создаем через рефлексию
+                // Создаем команду через рефлексию
                 java.lang.reflect.Constructor<PluginCommand> constructor = 
                     PluginCommand.class.getDeclaredConstructor(String.class, Plugin.class);
                 constructor.setAccessible(true);
                 command = constructor.newInstance(commandName, plugin);
-                
-                // Регистрируем в CommandMap
                 commandMap.register(plugin.getDescription().getName().toLowerCase(), command);
             }
             
-            // Устанавливаем executor
             command.setExecutor(executor);
-            
-            // Настройки команды
             command.setPermission(configManager.getPermissionPrefix() + "." + commandName);
             command.setPermissionMessage(messageManager.getRawMessage("general.no-permission"));
             command.setUsage(messageManager.getRawMessage("general.invalid-usage", 
@@ -207,7 +189,6 @@ public class ScriptLoader {
     
     public void unloadAllScripts() {
         for (String cmdName : loadedCommands.keySet()) {
-            // Удаляем команду из CommandMap
             try {
                 CommandMap commandMap = Bukkit.getCommandMap();
                 java.lang.reflect.Field knownCommandsField = commandMap.getClass().getDeclaredField("knownCommands");
@@ -216,7 +197,6 @@ public class ScriptLoader {
                 @SuppressWarnings("unchecked")
                 Map<String, Command> knownCommands = (Map<String, Command>) knownCommandsField.get(commandMap);
                 
-                // Удаляем команду по разным ключам
                 knownCommands.remove(cmdName);
                 knownCommands.remove(plugin.getDescription().getName().toLowerCase() + ":" + cmdName);
                 
