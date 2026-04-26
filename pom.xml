@@ -12,10 +12,7 @@
 
     <name>ScriptCommands</name>
     <description>Dynamic script-based commands for Minecraft</description>
-    <authors>
-        <author>gordey9992</author>
-        <author>DeepSeek</author>
-    </authors>
+    <url>https://github.com/gordey9992/ScriptCommands</url>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
