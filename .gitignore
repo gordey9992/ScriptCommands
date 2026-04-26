@@ -1,5 +1,9 @@
 /target/
 /.idea/
+/.classpath
+/.project
 *.iml
-/compiled/
+*.log
 .DS_Store
+/compiled/
+/out/
