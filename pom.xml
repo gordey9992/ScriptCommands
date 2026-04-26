@@ -21,17 +21,19 @@
     </properties>
 
     <repositories>
+        <!-- Purpur Snapshots репозиторий для версии 1.21.11 (взято из официального README) -->
         <repository>
             <id>purpur</id>
-            <url>https://repo.purpurmc.org/releases</url>  <!-- releases, не snapshots! -->
+            <url>https://repo.purpurmc.org/snapshots</url>
         </repository>
     </repositories>
 
     <dependencies>
+        <!-- Purpur API для версии 1.21.11 (формат версии из README) -->
         <dependency>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
-            <version>1.21.11</version>  <!-- точная версия, без SNAPSHOT -->
+            <version>1.21.11-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
