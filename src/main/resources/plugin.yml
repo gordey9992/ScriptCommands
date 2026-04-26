@@ -1,0 +1,27 @@
+name: ScriptCommands
+version: 1.0.0
+main: me.gordey9992.scriptcommands.ScriptCommands
+api-version: "1.21"
+authors: [gordey9992, DeepSeek]
+description: Динамические команды из Java скриптов
+website: https://github.com/gordey9992/ScriptCommands
+
+commands:
+  scriptreload:
+    description: Перезагрузить все скрипты
+    usage: /scriptreload
+    permission: scriptcommands.reload
+    aliases: [sr, scriptsreload]
+
+permissions:
+  scriptcommands.reload:
+    description: Право на перезагрузку скриптов
+    default: op
+  scriptcommands.use.*:
+    description: Право на использование всех динамических команд
+    default: op
+  scriptcommands.admin:
+    description: Административные права
+    default: op
+    children:
+      scriptcommands.reload: true
