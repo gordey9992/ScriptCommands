@@ -147,17 +147,12 @@ public class ScriptLoader {
             CommandExecutor executor = compiler.compile(javaFile, commandName);
             
             if (executor != null) {
-                // Регистрируем команду
-                PluginCommand command = getOrCreateCommand(commandName);
-                if (command != null) {
-                    command.setExecutor(executor);
-                    command.setPermission(configManager.getPermissionPrefix() + "." + commandName);
-                    command.setPermissionMessage(messageManager.getRawMessage("general.no-permission"));
-                    
-                    loadedCommands.put(commandName, executor);
-                    plugin.getLogger().info("✓ Команда '/" + commandName + "' загружена из " + fileName);
-                    return true;
-                }
+                // Регистрируем команду через Bukkit (правильный способ!)
+                registerCommand(commandName, executor);
+                
+                loadedCommands.put(commandName, executor);
+                plugin.getLogger().info("✓ Команда '/" + commandName + "' загружена из " + fileName);
+                return true;
             }
             
         } catch (Exception e) {
@@ -169,43 +164,69 @@ public class ScriptLoader {
         return false;
     }
     
-    private PluginCommand getOrCreateCommand(String name) {
-        PluginCommand command = plugin.getCommand(name);
-        if (command == null) {
-            try {
-                command = Bukkit.getPluginCommand(name);
-                if (command == null) {
-                    // Динамическое создание команды
-                    var commandMap = Bukkit.getCommandMap();
-                    var knownCommandsField = commandMap.getClass().getDeclaredField("knownCommands");
-                    knownCommandsField.setAccessible(true);
-                    
-                    @SuppressWarnings("unchecked")
-                    Map<String, Command> knownCommands = (Map<String, Command>) knownCommandsField.get(commandMap);
-                    
-                    command = new PluginCommand(name, plugin);
-                    command.setExecutor((sender, cmd, label, args) -> true);
-                    command.setUsage(messageManager.getRawMessage("general.invalid-usage", 
-                        new String[]{"{usage}"}, new String[]{"/" + name}));
-                    
-                    knownCommands.put(name, command);
-                    knownCommands.put("minecraft:" + name, command);
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("Не удалось создать команду: " + name);
-                if (configManager.isShowStacktraces()) {
-                    e.printStackTrace();
-                }
+    // ПРАВИЛЬНЫЙ способ регистрации команды без прямого вызова конструктора
+    private void registerCommand(String commandName, CommandExecutor executor) {
+        // Получаем CommandMap через рефлексию
+        try {
+            CommandMap commandMap = Bukkit.getCommandMap();
+            
+            // Создаем объект команды через рефлексию (обходим приватный конструктор)
+            PluginCommand command = null;
+            
+            // Пытаемся получить существующую команду из plugin.yml
+            command = plugin.getCommand(commandName);
+            
+            if (command == null) {
+                // Если команды нет в plugin.yml, создаем через рефлексию
+                java.lang.reflect.Constructor<PluginCommand> constructor = 
+                    PluginCommand.class.getDeclaredConstructor(String.class, Plugin.class);
+                constructor.setAccessible(true);
+                command = constructor.newInstance(commandName, plugin);
+                
+                // Регистрируем в CommandMap
+                commandMap.register(plugin.getDescription().getName().toLowerCase(), command);
+            }
+            
+            // Устанавливаем executor
+            command.setExecutor(executor);
+            
+            // Настройки команды
+            command.setPermission(configManager.getPermissionPrefix() + "." + commandName);
+            command.setPermissionMessage(messageManager.getRawMessage("general.no-permission"));
+            command.setUsage(messageManager.getRawMessage("general.invalid-usage", 
+                new String[]{"{usage}"}, new String[]{"/" + commandName}));
+            command.setDescription("Динамическая команда из скрипта: " + commandName);
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("Не удалось зарегистрировать команду: " + commandName);
+            if (configManager.isShowStacktraces()) {
+                e.printStackTrace();
             }
         }
-        return command;
     }
     
     public void unloadAllScripts() {
         for (String cmdName : loadedCommands.keySet()) {
-            PluginCommand command = plugin.getCommand(cmdName);
-            if (command != null) {
-                command.setExecutor(null);
+            // Удаляем команду из CommandMap
+            try {
+                CommandMap commandMap = Bukkit.getCommandMap();
+                java.lang.reflect.Field knownCommandsField = commandMap.getClass().getDeclaredField("knownCommands");
+                knownCommandsField.setAccessible(true);
+                
+                @SuppressWarnings("unchecked")
+                Map<String, Command> knownCommands = (Map<String, Command>) knownCommandsField.get(commandMap);
+                
+                // Удаляем команду по разным ключам
+                knownCommands.remove(cmdName);
+                knownCommands.remove(plugin.getDescription().getName().toLowerCase() + ":" + cmdName);
+                
+                PluginCommand command = plugin.getCommand(cmdName);
+                if (command != null) {
+                    command.setExecutor(null);
+                }
+                
+            } catch (Exception e) {
+                plugin.getLogger().warning("Ошибка выгрузки команды: " + cmdName);
             }
         }
         loadedCommands.clear();
