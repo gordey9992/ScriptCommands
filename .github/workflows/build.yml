@@ -1,0 +1,65 @@
+name: Build ScriptCommands Plugin
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Ручной запуск
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    
+    - name: Compile Plugin
+      run: mvn clean compile
+    
+    - name: Package JAR
+      run: mvn package
+    
+    - name: Upload JAR as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ScriptCommands-Plugin
+        path: target/*.jar
+        retention-days: 7
+    
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.0-${{ github.run_number }}
+        name: Release v1.0.0-${{ github.run_number }}
+        body: |
+          ## ScriptCommands v1.0.0
+          **Авторы: gordey9992 & DeepSeek**
+          
+          ### Изменения в этом билде:
+          - Автоматическая сборка #${{ github.run_number }}
+          - Коммит: ${{ github.sha }}
+          
+          ### Установка:
+          1. Скачайте JAR файл ниже
+          2. Поместите в папку `plugins/`
+          3. Перезапустите сервер
+          
+          ### Команды:
+          - `/scriptreload` - перезагрузить скрипты
+          
+        files: target/*.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
