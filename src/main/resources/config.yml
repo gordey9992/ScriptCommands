@@ -1,0 +1,76 @@
+# ============================================
+# ScriptCommands Config.yml
+# Авторы: gordey9992 & DeepSeek
+# Версия: 1.0.0
+# ============================================
+
+# Настройки компиляции скриптов
+compiler:
+  # Папка где лежат .java файлы (относительно папки плагина)
+  scripts-folder: "files"
+  
+  # Автоматически перезагружать скрипты при изменении файлов
+  auto-reload: false
+  
+  # Интервал проверки изменений в секундах (если auto-reload: true)
+  auto-reload-interval: 30
+  
+  # Временная папка для скомпилированных классов
+  temp-folder: "compiled"
+
+# Настройки команд
+commands:
+  # Префикс прав доступа для динамических команд
+  permission-prefix: "scriptcommands.use"
+  
+  # Разрешить выполнение команд из консоли
+  allow-console: true
+  
+  # Разрешить использование команд в командном блоке
+  allow-command-block: false
+
+# Настройки безопасности
+security:
+  # Разрешенные пакеты (можно использовать * для всех подпакетов)
+  allowed-packages:
+    - "org.bukkit"
+    - "org.bukkit.entity"
+    - "org.bukkit.command"
+    - "org.bukkit.inventory"
+    - "org.bukkit.potion"
+    - "org.bukkit.util"
+    - "net.md_5.bungee.api.chat"
+  
+  # Запрещенные классы (безопасность)
+  blacklisted-classes:
+    - "java.lang.System"
+    - "java.lang.Runtime"
+    - "java.lang.ProcessBuilder"
+    - "java.io.File"
+    - "java.io.FileInputStream"
+    - "java.io.FileOutputStream"
+    - "java.nio.file.Files"
+    - "java.nio.file.Path"
+    - "java.net.Socket"
+    - "java.net.ServerSocket"
+    - "java.lang.reflect.Method"
+    - "java.lang.reflect.Field"
+  
+  # Максимальное время выполнения скрипта в миллисекундах (0 = без ограничений)
+  max-execution-time: 5000
+
+# Настройки отладки
+debug:
+  # Включить режим отладки
+  enabled: false
+  # Показывать стектрейсы ошибок
+  show-stacktraces: true
+  # Логировать все компиляции
+  log-compilations: false
+
+# Лимиты
+limits:
+  # Максимальное количество загружаемых скриптов (0 = без ограничений)
+  max-scripts: 0
+  # Максимальный размер файла скрипта в байтах (0 = без ограничений)
+  max-file-size: 0
