@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>ScriptCommands</name>
-    <description>Dynamic script-based commands for Minecraft</description>
+    <description>Dynamic script-based commands for Minecraft Purpur 1.21.11</description>
     <url>https://github.com/gordey9992/ScriptCommands</url>
 
     <properties>
@@ -49,11 +49,5 @@
                 </configuration>
             </plugin>
         </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
     </build>
 </project>
