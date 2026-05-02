@@ -11,18 +11,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # ← ДОБАВИТЬ ЭТУ СТРОКУ (глобальные права)
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # ← И СЮДА
+      contents: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      with:
+        fetch-depth: 0  # нужна вся история для коммитов
+
     - name: Setup JDK 21
       uses: actions/setup-java@v4
       with:
@@ -36,6 +38,44 @@ jobs:
     - name: Package JAR
       run: mvn package
     
+    - name: Get commits since last tag
+      id: commits
+      run: |
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          COMMITS=$(git log --oneline --no-merges)
+        else
+          COMMITS=$(git log --oneline --no-merges ${LAST_TAG}..HEAD)
+        fi
+        {
+          echo 'COMMITS<<EOF'
+          echo "$COMMITS"
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Generate Release Description with AI (free model)
+      id: ai
+      run: |
+        curl -s -X POST https://openrouter.ai/api/v1/chat/completions \
+          -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "model": "inclusionai/ling-2.6-1t-free",
+            "messages": [
+              {
+                "role": "user",
+                "content": "Ты помогаешь с описанием релизов Minecraft плагина. Напиши краткое, красивое описание релиза на русском языке (2-3 предложения) по списку коммитов:\n\n${{ steps.commits.outputs.COMMITS }}"
+              }
+            ]
+          }' > response.json
+        
+        DESCRIPTION=$(jq -r '.choices[0].message.content' response.json)
+        {
+          echo 'DESCRIPTION<<EOF'
+          echo "$DESCRIPTION"
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+
     - name: Upload JAR as Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -49,22 +89,7 @@ jobs:
       with:
         tag_name: v1.0.0-${{ github.run_number }}
         name: Release v1.0.0-${{ github.run_number }}
-        body: |
-          ## ScriptCommands v1.0.0
-          **Авторы: gordey9992 & DeepSeek**
-          
-          ### Изменения в этом билде:
-          - Автоматическая сборка #${{ github.run_number }}
-          - Коммит: ${{ github.sha }}
-          
-          ### Установка:
-          1. Скачайте JAR файл ниже
-          2. Поместите в папку `plugins/`
-          3. Перезапустите сервер
-          
-          ### Команды:
-          - `/scriptreload` - перезагрузить скрипты
-          
+        body: ${{ steps.ai.outputs.DESCRIPTION }}
         files: target/*.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
