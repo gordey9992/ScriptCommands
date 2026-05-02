@@ -1,0 +1,60 @@
+name: AI Release Description
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get commits
+        id: commits
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --oneline --no-merges)
+          else
+            COMMITS=$(git log --oneline --no-merges ${PREV_TAG}..HEAD)
+          fi
+          {
+            echo 'COMMITS<<EOF'
+            echo "$COMMITS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate description via AI
+        id: ai
+        run: |
+          curl -s -X POST https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer ${{ secrets.OPENROUTER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "inclusionai/ling-2.6-flash",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "Ты помогаешь с описанием релизов Minecraft плагина. Напиши краткое, красивое описание релиза на русском языке по списку коммитов:\n\n${{ steps.commits.outputs.COMMITS }}"
+                }
+              ]
+            }' > response.json
+          
+          DESCRIPTION=$(jq -r '.choices[0].message.content' response.json)
+          echo "DESCRIPTION<<EOF" >> $GITHUB_OUTPUT
+          echo "$DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.ai.outputs.DESCRIPTION }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
