@@ -7,9 +7,27 @@ import java.io.File;
 import java.util.List;
 
 public class ConfigManager {
+    
     private final JavaPlugin plugin;
     private FileConfiguration config;
     private File configFile;
+    
+    // Поля для доступа из других классов
+    private String scriptsFolder;
+    private boolean autoReload;
+    private int autoReloadInterval;
+    private String tempFolder;
+    private String permissionPrefix;
+    private boolean allowConsole;
+    private boolean allowCommandBlock;
+    private List<String> allowedPackages;
+    private List<String> blacklistedClasses;
+    private long maxExecutionTime;
+    private boolean debugEnabled;
+    private boolean showStacktraces;
+    private boolean logCompilations;
+    private int maxScripts;
+    private long maxFileSize;
     
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -17,17 +35,29 @@ public class ConfigManager {
         reloadConfig();
     }
     
-public void reloadConfig() {
-    if (configFile == null) {
-        configFile = new File(plugin.getDataFolder(), "config.yml");
+    public void reloadConfig() {
+        if (!configFile.exists()) {
+            plugin.saveResource("config.yml", false);
+        }
+        config = YamlConfiguration.loadConfiguration(configFile);
+        
+        // Загружаем значения в поля
+        scriptsFolder = config.getString("compiler.scripts-folder", "files");
+        autoReload = config.getBoolean("compiler.auto-reload", false);
+        autoReloadInterval = config.getInt("compiler.auto-reload-interval", 30);
+        tempFolder = config.getString("compiler.temp-folder", "compiled");
+        permissionPrefix = config.getString("commands.permission-prefix", "scriptcommands.use");
+        allowConsole = config.getBoolean("commands.allow-console", true);
+        allowCommandBlock = config.getBoolean("commands.allow-command-block", false);
+        allowedPackages = config.getStringList("security.allowed-packages");
+        blacklistedClasses = config.getStringList("security.blacklisted-classes");
+        maxExecutionTime = config.getLong("security.max-execution-time", 5000);
+        debugEnabled = config.getBoolean("debug.enabled", false);
+        showStacktraces = config.getBoolean("debug.show-stacktraces", true);
+        logCompilations = config.getBoolean("debug.log-compilations", false);
+        maxScripts = config.getInt("limits.max-scripts", 0);
+        maxFileSize = config.getLong("limits.max-file-size", 0);
     }
-    config = YamlConfiguration.loadConfiguration(configFile);
-    
-    // Обновляем значения из конфига
-    scriptsFolder = config.getString("compiler.scripts-folder", "files");
-    autoReload = config.getBoolean("compiler.auto-reload", false);
-    autoReloadInterval = config.getInt("compiler.auto-reload-interval", 30);
-}
     
     public void saveDefaultConfig() {
         if (!configFile.exists()) {
@@ -42,68 +72,20 @@ public void reloadConfig() {
         return config;
     }
     
-    // Compiler settings
-    public String getScriptsFolder() {
-        return getConfig().getString("compiler.scripts-folder", "files");
-    }
-    
-    public boolean isAutoReload() {
-        return getConfig().getBoolean("compiler.auto-reload", false);
-    }
-    
-    public int getAutoReloadInterval() {
-        return getConfig().getInt("compiler.auto-reload-interval", 30);
-    }
-    
-    public String getTempFolder() {
-        return getConfig().getString("compiler.temp-folder", "compiled");
-    }
-    
-    // Command settings
-    public String getPermissionPrefix() {
-        return getConfig().getString("commands.permission-prefix", "scriptcommands.use");
-    }
-    
-    public boolean isAllowConsole() {
-        return getConfig().getBoolean("commands.allow-console", true);
-    }
-    
-    public boolean isAllowCommandBlock() {
-        return getConfig().getBoolean("commands.allow-command-block", false);
-    }
-    
-    // Security settings
-    public List<String> getAllowedPackages() {
-        return getConfig().getStringList("security.allowed-packages");
-    }
-    
-    public List<String> getBlacklistedClasses() {
-        return getConfig().getStringList("security.blacklisted-classes");
-    }
-    
-    public long getMaxExecutionTime() {
-        return getConfig().getLong("security.max-execution-time", 5000);
-    }
-    
-    // Debug settings
-    public boolean isDebugEnabled() {
-        return getConfig().getBoolean("debug.enabled", false);
-    }
-    
-    public boolean isShowStacktraces() {
-        return getConfig().getBoolean("debug.show-stacktraces", true);
-    }
-    
-    public boolean isLogCompilations() {
-        return getConfig().getBoolean("debug.log-compilations", false);
-    }
-    
-    // Limits
-    public int getMaxScripts() {
-        return getConfig().getInt("limits.max-scripts", 0);
-    }
-    
-    public long getMaxFileSize() {
-        return getConfig().getLong("limits.max-file-size", 0);
-    }
+    // Геттеры
+    public String getScriptsFolder() { return scriptsFolder; }
+    public boolean isAutoReload() { return autoReload; }
+    public int getAutoReloadInterval() { return autoReloadInterval; }
+    public String getTempFolder() { return tempFolder; }
+    public String getPermissionPrefix() { return permissionPrefix; }
+    public boolean isAllowConsole() { return allowConsole; }
+    public boolean isAllowCommandBlock() { return allowCommandBlock; }
+    public List<String> getAllowedPackages() { return allowedPackages; }
+    public List<String> getBlacklistedClasses() { return blacklistedClasses; }
+    public long getMaxExecutionTime() { return maxExecutionTime; }
+    public boolean isDebugEnabled() { return debugEnabled; }
+    public boolean isShowStacktraces() { return showStacktraces; }
+    public boolean isLogCompilations() { return logCompilations; }
+    public int getMaxScripts() { return maxScripts; }
+    public long getMaxFileSize() { return maxFileSize; }
 }
