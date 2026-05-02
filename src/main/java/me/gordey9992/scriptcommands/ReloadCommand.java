@@ -4,46 +4,54 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 
 public class ReloadCommand implements CommandExecutor {
+    
     private final ScriptCommands plugin;
-    private final MessageManager messageManager;
     private final ConfigManager configManager;
+    private final MessageManager messageManager;
+    private final ScriptLoader scriptLoader;
     
     public ReloadCommand(ScriptCommands plugin) {
         this.plugin = plugin;
-        this.messageManager = plugin.getMessageManager();
         this.configManager = plugin.getConfigManager();
+        this.messageManager = plugin.getMessageManager();
+        this.scriptLoader = plugin.getScriptLoader();
     }
     
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        
+        long startTime = System.currentTimeMillis();
+        
         try {
-            // Перезагрузка конфигов
+            // 1. Перезагружаем config.yml
             configManager.reloadConfig();
+            plugin.getLogger().info("config.yml перезагружен");
+            
+            // 2. Перезагружаем messages.yml
             messageManager.reloadMessages();
+            plugin.getLogger().info("messages.yml перезагружен");
             
-            // Перезагрузка скриптов
-            plugin.getScriptLoader().stopAutoReloadTask();
-            plugin.getScriptLoader().loadAllScripts();
+            // 3. Перезагружаем все скрипты (команды)
+            scriptLoader.loadAllScripts();
+            plugin.getLogger().info("Все скрипты перезагружены");
             
-            // Запуск авто-перезагрузки если включена
-            if (configManager.isAutoReload()) {
-                plugin.getScriptLoader().startAutoReloadTask();
-            }
+            long time = System.currentTimeMillis() - startTime;
             
-            // Сообщение об успехе
-            messageManager.sendMessage(sender, "plugin.reloaded");
+            // Сообщение игроку (из messages.yml)
+            String msg = messageManager.getMessage("plugin.reloaded");
+            msg = msg.replace("{time}", String.valueOf(time));
             
-            if (configManager.isDebugEnabled() && sender instanceof Player) {
-                sender.sendMessage("§7Скриптов загружено: §e" + 
-                    plugin.getScriptLoader().getLoadedCommands().size());
+            if (sender instanceof Player) {
+                sender.sendMessage(msg);
+            } else {
+                plugin.getLogger().info("Плагин перезагружен за " + time + "ms");
             }
             
         } catch (Exception e) {
-            messageManager.sendMessage(sender, "plugin.reload-error");
+            String errorMsg = messageManager.getRawMessage("plugin.reload-error");
+            sender.sendMessage(errorMsg);
             plugin.getLogger().severe("Ошибка перезагрузки: " + e.getMessage());
-            if (configManager.isShowStacktraces()) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
         
         return true;
