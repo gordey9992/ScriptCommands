@@ -19,13 +19,13 @@ public class MessageManager {
         reloadMessages();
     }
     
-    public void reloadMessages() {
-        if (!messagesFile.exists()) {
-            plugin.saveResource("messages.yml", false);
-        }
-        messages = YamlConfiguration.loadConfiguration(messagesFile);
-        prefix = colorize(messages.getString("prefix", "&8[&6ScriptCommands&8] &7"));
+public void reloadMessages() {
+    if (messagesFile == null) {
+        messagesFile = new File(plugin.getDataFolder(), "messages.yml");
     }
+    messages = YamlConfiguration.loadConfiguration(messagesFile);
+    prefix = colorize(messages.getString("prefix", "&8[&6ScriptCommands&8] &7"));
+}
     
     public void saveDefaultMessages() {
         if (!messagesFile.exists()) {
