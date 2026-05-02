@@ -8,11 +8,16 @@ on:
       - 'pom.xml'
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Ручной запуск
+  workflow_dispatch:
+
+permissions:
+  contents: write  # ← ДОБАВИТЬ ЭТУ СТРОКУ (глобальные права)
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # ← И СЮДА
     
     steps:
     - name: Checkout code
