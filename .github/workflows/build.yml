@@ -23,7 +23,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # нужна вся история для коммитов
+        fetch-depth: 0
 
     - name: Setup JDK 21
       uses: actions/setup-java@v4
@@ -92,4 +92,4 @@ jobs:
         body: ${{ steps.ai.outputs.DESCRIPTION }}
         files: target/*.jar
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
