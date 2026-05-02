@@ -19,13 +19,17 @@ commands:
   screload:
     description: Перезагрузить плагин, конфиги и скрипты
     usage: /screload
-    permission: scriptcommands.reload
+    permission: scriptcommands.reload-all
     aliases: [screload, scr]
 
 # Права доступа
 permissions:
   scriptcommands.reload:
     description: Право на перезагрузку скриптов
+    default: op
+
+  scriptcommands.reload-all:
+    description: Право на перезагрузку
     default: op
   
   scriptcommands.use.*:
