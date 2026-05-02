@@ -1,10 +1,8 @@
 package me.gordey9992.scriptcommands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.plugin.java.JavaPlugin;
-import java.io.File;
 
 public class ScriptCommands extends JavaPlugin {
     
@@ -27,7 +25,7 @@ public class ScriptCommands extends JavaPlugin {
         messageManager.saveDefaultMessages();
         
         // Регистрация команды /screload
-        Command command = getCommand("screload");
+        PluginCommand command = getCommand("screload");
         if (command != null) {
             command.setExecutor(new ReloadCommand(this));
             command.setPermission("scriptcommands.reload");
@@ -40,6 +38,7 @@ public class ScriptCommands extends JavaPlugin {
         getLogger().info("=========================================");
         getLogger().info("ScriptCommands v" + getDescription().getVersion());
         getLogger().info("Авторы: gordey9992 & DeepSeek");
+        getLogger().info("Папка со скриптами: " + configManager.getScriptsFolder());
         getLogger().info("=========================================");
     }
     
