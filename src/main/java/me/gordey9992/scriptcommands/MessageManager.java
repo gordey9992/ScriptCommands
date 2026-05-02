@@ -19,13 +19,22 @@ public class MessageManager {
         reloadMessages();
     }
     
-public void reloadMessages() {
-    if (messagesFile == null) {
-        messagesFile = new File(plugin.getDataFolder(), "messages.yml");
+    public void reloadMessages() {
+        if (!messagesFile.exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
+        try {
+            messages = YamlConfiguration.loadConfiguration(messagesFile);
+            prefix = colorize(messages.getString("prefix", "&8[&6ScriptCommands&8] &7"));
+        } catch (Exception e) {
+            plugin.getLogger().severe("Ошибка загрузки messages.yml: " + e.getMessage());
+            // Создаём дефолтную конфигурацию, чтобы плагин не падал
+            messages = new YamlConfiguration();
+            messages.set("prefix", "&8[&6ScriptCommands&8] &7");
+            messages.set("plugin.reloaded", "&aПлагин перезагружен за {time}ms");
+            prefix = colorize("&8[&6ScriptCommands&8] &7");
+        }
     }
-    messages = YamlConfiguration.loadConfiguration(messagesFile);
-    prefix = colorize(messages.getString("prefix", "&8[&6ScriptCommands&8] &7"));
-}
     
     public void saveDefaultMessages() {
         if (!messagesFile.exists()) {
