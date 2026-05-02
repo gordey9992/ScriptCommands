@@ -17,12 +17,17 @@ public class ConfigManager {
         reloadConfig();
     }
     
-    public void reloadConfig() {
-        if (!configFile.exists()) {
-            plugin.saveResource("config.yml", false);
-        }
-        config = YamlConfiguration.loadConfiguration(configFile);
+public void reloadConfig() {
+    if (configFile == null) {
+        configFile = new File(plugin.getDataFolder(), "config.yml");
     }
+    config = YamlConfiguration.loadConfiguration(configFile);
+    
+    // Обновляем значения из конфига
+    scriptsFolder = config.getString("compiler.scripts-folder", "files");
+    autoReload = config.getBoolean("compiler.auto-reload", false);
+    autoReloadInterval = config.getInt("compiler.auto-reload-interval", 30);
+}
     
     public void saveDefaultConfig() {
         if (!configFile.exists()) {
