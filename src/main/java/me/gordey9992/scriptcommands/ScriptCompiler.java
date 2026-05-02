@@ -18,6 +18,35 @@ public class ScriptCompiler {
         this.configManager = ((ScriptCommands) plugin).getConfigManager();
     }
     
+    // Находит серверный JAR в корне сервера (на уровень выше папки plugins)
+    private File findServerJar() {
+        // Папка, где лежит плагин → plugins/
+        File pluginsDir = plugin.getDataFolder().getParentFile();
+        if (pluginsDir == null) return null;
+        
+        // Поднимаемся на уровень выше → корень сервера
+        File serverRoot = pluginsDir.getParentFile();
+        if (serverRoot == null) return null;
+        
+        // 1. Ищем server.jar
+        File serverJar = new File(serverRoot, "server.jar");
+        if (serverJar.exists()) return serverJar;
+        
+        // 2. Ищем purpur-*.jar
+        File[] purpur = serverRoot.listFiles((dir, name) -> name.matches("purpur-.*\\.jar"));
+        if (purpur != null && purpur.length > 0) return purpur[0];
+        
+        // 3. Ищем paper-*.jar
+        File[] paper = serverRoot.listFiles((dir, name) -> name.matches("paper-.*\\.jar"));
+        if (paper != null && paper.length > 0) return paper[0];
+        
+        // 4. Ищем spigot-*.jar
+        File[] spigot = serverRoot.listFiles((dir, name) -> name.matches("spigot-.*\\.jar"));
+        if (spigot != null && spigot.length > 0) return spigot[0];
+        
+        return null;
+    }
+    
     public CommandExecutor compile(Path sourceFile, String commandName) {
         try {
             Path compiledFolder = plugin.getDataFolder().toPath().resolve(configManager.getTempFolder());
@@ -62,7 +91,22 @@ public class ScriptCompiler {
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
             
             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjects(tempFile.toFile());
-            List<String> options = Arrays.asList("-d", compiledFolder.toString());
+            
+            // Находим серверный JAR для classpath
+            File serverJar = findServerJar();
+            List<String> options = new ArrayList<>();
+            options.add("-d");
+            options.add(compiledFolder.toString());
+            
+            if (serverJar != null && serverJar.exists()) {
+                options.add("-cp");
+                options.add(serverJar.getAbsolutePath());
+                if (configManager.isDebugEnabled()) {
+                    plugin.getLogger().info("Classpath: " + serverJar.getAbsolutePath());
+                }
+            } else {
+                plugin.getLogger().warning("Серверный JAR не найден! Скрипты могут не скомпилироваться.");
+            }
             
             JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
             
