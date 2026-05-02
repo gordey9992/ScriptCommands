@@ -1,0 +1,2 @@
+- name: Create Release
+  uses: softprops/action-gh-release@v2  # если v2 вышла
