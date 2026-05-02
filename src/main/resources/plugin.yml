@@ -16,6 +16,11 @@ commands:
       - sr
       - scriptsreload
       - sreload
+  screload:
+    description: Перезагрузить плагин, конфиги и скрипты
+    usage: /screload
+    permission: scriptcommands.reload
+    aliases: [screload, scr]
 
 # Права доступа
 permissions:
