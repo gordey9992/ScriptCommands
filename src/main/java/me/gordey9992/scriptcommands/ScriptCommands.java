@@ -4,9 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
+import java.nio.file.*;
 import java.util.stream.Collectors;
 
 public class ScriptCommands extends JavaPlugin {
@@ -16,8 +16,9 @@ public class ScriptCommands extends JavaPlugin {
     private MessageManager messageManager;
     private ScriptLoader scriptLoader;
     private ScriptCompiler scriptCompiler;
-    private String latestVersion = null;
-    private boolean updateAsked = false;
+    
+    private String pendingUpdateUrl = null;
+    private String pendingUpdateVersion = null;
     
     @Override
     public void onEnable() {
@@ -42,14 +43,9 @@ public class ScriptCommands extends JavaPlugin {
             cmdSCReload.setExecutor(new ReloadCommand(this));
         }
         
-        PluginCommand cmdUpdateYes = getCommand("scupdateyes");
-        if (cmdUpdateYes != null) {
-            cmdUpdateYes.setExecutor(new UpdateCommand(this));
-        }
-        
-        PluginCommand cmdUpdateNo = getCommand("scupdateno");
-        if (cmdUpdateNo != null) {
-            cmdUpdateNo.setExecutor(new UpdateCommand(this));
+        PluginCommand cmdScript = getCommand("script");
+        if (cmdScript != null) {
+            cmdScript.setExecutor(new ScriptCommand(this));
         }
         
         scriptLoader.loadAllScripts();
@@ -60,7 +56,7 @@ public class ScriptCommands extends JavaPlugin {
         getLogger().info("Папка со скриптами: " + configManager.getScriptsFolder());
         getLogger().info("=========================================");
         
-        // Проверка обновлений
+        // Проверка обновлений при старте
         Bukkit.getScheduler().runTaskAsynchronously(this, this::checkForUpdates);
     }
     
@@ -71,6 +67,8 @@ public class ScriptCommands extends JavaPlugin {
         }
     }
     
+    // ========== АВТООБНОВЛЕНИЕ ==========
+    
     private void checkForUpdates() {
         try {
             String currentVersion = getDescription().getVersion();
@@ -80,16 +78,24 @@ public class ScriptCommands extends JavaPlugin {
             reader.close();
             
             JSONObject obj = new JSONObject(json);
-            latestVersion = obj.getString("tag_name");
+            String latestVersion = obj.getString("tag_name");
             
             if (!latestVersion.equalsIgnoreCase(currentVersion)) {
-                updateAsked = true;
+                String downloadUrl = obj.getJSONArray("assets").getJSONObject(0).getString("browser_download_url");
+                
                 Bukkit.getScheduler().runTask(this, () -> {
                     getLogger().info("§e=========================================");
-                    getLogger().info("§eДоступна новая версия §6" + latestVersion + "§e! (текущая: " + currentVersion + ")");
-                    getLogger().info("§eВыполните §6/scupdateyes§e для обновления");
-                    getLogger().info("§eИли §6/scupdateno§e чтобы пропустить (напомню при следующем запуске)");
+                    getLogger().info("§eДоступна новая версия §6" + latestVersion + "§e!");
+                    getLogger().info("§eДля обновления введите §6/script update§e");
                     getLogger().info("§e=========================================");
+                    
+                    // Уведомление игроков с правом
+                    Bukkit.getOnlinePlayers().stream()
+                        .filter(p -> p.hasPermission("scriptcommands.update.msg"))
+                        .forEach(p -> p.sendMessage("§e[ScriptCommands] Доступна новая версия " + latestVersion + "! Введите §6/script update§e"));
+                    
+                    pendingUpdateUrl = downloadUrl;
+                    pendingUpdateVersion = latestVersion;
                 });
             }
         } catch (Exception e) {
@@ -97,9 +103,60 @@ public class ScriptCommands extends JavaPlugin {
         }
     }
     
-    public boolean isUpdateAsked() { return updateAsked; }
-    public void setUpdateAsked(boolean asked) { updateAsked = asked; }
-    public String getLatestVersion() { return latestVersion; }
+    public void performUpdate(org.bukkit.command.CommandSender sender) {
+        if (pendingUpdateUrl == null) {
+            sender.sendMessage("§cНет ожидающих обновлений!");
+            return;
+        }
+        
+        sender.sendMessage("§aНачинаю обновление до версии " + pendingUpdateVersion + "...");
+        
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                // Скачиваем новый JAR во временный файл
+                File pluginsDir = getDataFolder().getParentFile();
+                File tempJar = new File(pluginsDir, "ScriptCommands-update-temp.jar");
+                try (InputStream in = new URL(pendingUpdateUrl).openStream()) {
+                    Files.copy(in, tempJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                
+                // Находим текущий JAR
+                File currentJar = null;
+                for (File f : pluginsDir.listFiles()) {
+                    if (f.getName().startsWith("ScriptCommands") && f.getName().endsWith(".jar") && !f.getName().contains("update")) {
+                        currentJar = f;
+                        break;
+                    }
+                }
+                
+                if (currentJar == null) {
+                    sender.sendMessage("§cНе найден текущий JAR плагина!");
+                    return;
+                }
+                
+                // Заменяем JAR
+                Files.move(tempJar.toPath(), currentJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                
+                sender.sendMessage("§aФайл обновлён! Перезагружаю плагин...");
+                
+                // Перезагружаем плагин
+                Bukkit.getScheduler().runTask(this, () -> {
+                    Bukkit.getPluginManager().disablePlugin(this);
+                    Bukkit.getPluginManager().enablePlugin(this);
+                    sender.sendMessage("§aПлагин обновлён до версии " + pendingUpdateVersion + "!");
+                });
+                
+                pendingUpdateUrl = null;
+                pendingUpdateVersion = null;
+                
+            } catch (Exception e) {
+                sender.sendMessage("§cОшибка обновления: " + e.getMessage());
+                getLogger().severe("Ошибка обновления: " + e.getMessage());
+            }
+        });
+    }
+    
+    public String getPendingUpdateVersion() { return pendingUpdateVersion; }
     
     public static ScriptCommands getInstance() { return instance; }
     public ConfigManager getConfigManager() { return configManager; }
