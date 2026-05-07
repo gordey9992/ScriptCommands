@@ -1,6 +1,7 @@
 package me.gordey9992.scriptcommands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.JSONObject;
