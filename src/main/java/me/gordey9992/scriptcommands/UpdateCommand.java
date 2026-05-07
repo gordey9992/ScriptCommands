@@ -22,7 +22,7 @@ public class UpdateCommand implements CommandExecutor {
             
         } else if (cmd.getName().equalsIgnoreCase("scupdateno")) {
             plugin.setUpdateAsked(false);
-            sender.sendMessage("§7Обновление пропущено. Напомню при следующем запуске.");
+            sender.sendMessage("§7Обновление пропущено.");
         }
         
         return true;
