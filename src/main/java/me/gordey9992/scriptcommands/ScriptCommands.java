@@ -170,4 +170,5 @@ public class ScriptCommands extends JavaPlugin {
     public String getLatestVersion() { return latestVersion; }
     public String getPendingUpdateUrl() { return pendingUpdateUrl; }
     public void setPendingUpdateUrl(String url) { this.pendingUpdateUrl = url; }
+    public String getPendingUpdateVersion() { return pendingUpdateVersion; }
 }
