@@ -18,31 +18,28 @@ public class ScriptCompiler {
         this.configManager = ((ScriptCommands) plugin).getConfigManager();
     }
     
-    // Находит серверный JAR в корне сервера (на уровень выше папки plugins)
+    // ========== ИСПРАВЛЕННЫЙ ПОИСК СЕРВЕРНОГО JAR ==========
     private File findServerJar() {
-        // Папка, где лежит плагин → plugins/
-        File pluginsDir = plugin.getDataFolder().getParentFile();
-        if (pluginsDir == null) return null;
+        // 1. Ищем в папке плагина (самый надёжный способ)
+        File pluginDir = plugin.getDataFolder();
+        File jarInPlugin = new File(pluginDir, "server.jar");
+        if (jarInPlugin.exists()) return jarInPlugin;
         
-        // Поднимаемся на уровень выше → корень сервера
-        File serverRoot = pluginsDir.getParentFile();
-        if (serverRoot == null) return null;
+        // 2. Ищем в корне сервера (на уровень выше папки plugins)
+        File root = pluginDir.getParentFile().getParentFile();
+        if (root == null) return null;
         
-        // 1. Ищем server.jar
-        File serverJar = new File(serverRoot, "server.jar");
-        if (serverJar.exists()) return serverJar;
-        
-        // 2. Ищем purpur-*.jar
-        File[] purpur = serverRoot.listFiles((dir, name) -> name.matches("purpur-.*\\.jar"));
+        // 3. Ищем purpur-*.jar
+        File[] purpur = root.listFiles((dir, name) -> name.matches("purpur-.*\\.jar"));
         if (purpur != null && purpur.length > 0) return purpur[0];
         
-        // 3. Ищем paper-*.jar
-        File[] paper = serverRoot.listFiles((dir, name) -> name.matches("paper-.*\\.jar"));
-        if (paper != null && paper.length > 0) return paper[0];
+        // 4. Ищем server.jar
+        File serverJar = new File(root, "server.jar");
+        if (serverJar.exists()) return serverJar;
         
-        // 4. Ищем spigot-*.jar
-        File[] spigot = serverRoot.listFiles((dir, name) -> name.matches("spigot-.*\\.jar"));
-        if (spigot != null && spigot.length > 0) return spigot[0];
+        // 5. Ищем любой .jar в корне сервера
+        File[] anyJar = root.listFiles((dir, name) -> name.endsWith(".jar"));
+        if (anyJar != null && anyJar.length > 0) return anyJar[0];
         
         return null;
     }
@@ -106,6 +103,7 @@ public class ScriptCompiler {
                 }
             } else {
                 plugin.getLogger().warning("Серверный JAR не найден! Скрипты могут не скомпилироваться.");
+                plugin.getLogger().warning("Положите server.jar в папку plugins/ScriptCommands/");
             }
             
             JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
