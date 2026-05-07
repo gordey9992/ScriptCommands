@@ -8,28 +8,38 @@ website: https://github.com/gordey9992/ScriptCommands
 
 commands:
   scriptreload:
-    description: Перезагрузить все скрипты
+    description: Перезагрузить скрипты
     usage: /scriptreload
     permission: scriptcommands.reload
     aliases: [sr, scriptsreload, sreload]
   
   screload:
-    description: Перезагрузить плагин, конфиги и скрипты
+    description: Полная перезагрузка плагина
     usage: /screload
     permission: scriptcommands.reload-all
     aliases: [scr]
   
+  scupdateyes:
+    description: Установить новую версию
+    usage: /scupdateyes
+    permission: scriptcommands.update.accept
+  
+  scupdateno:
+    description: Пропустить обновление
+    usage: /scupdateno
+    permission: scriptcommands.update.msg
+  
   script:
-    description: Управление плагином (обновления)
+    description: Управление плагином
     usage: /script update
     permission: scriptcommands.update.msg
 
 permissions:
   scriptcommands.reload:
-    description: Право на перезагрузку скриптов
+    description: Перезагрузка скриптов
     default: op
   scriptcommands.reload-all:
-    description: Право на полную перезагрузку
+    description: Полная перезагрузка
     default: op
   scriptcommands.update.msg:
     description: Получать уведомления об обновлениях
@@ -38,13 +48,5 @@ permissions:
     description: Устанавливать обновления
     default: op
   scriptcommands.use.*:
-    description: Право на использование всех динамических команд
+    description: Использование динамических команд
     default: true
-  scriptcommands.admin:
-    description: Административные права плагина
-    default: op
-    children:
-      scriptcommands.reload: true
-      scriptcommands.reload-all: true
-      scriptcommands.update.msg: true
-      scriptcommands.update.accept: true
