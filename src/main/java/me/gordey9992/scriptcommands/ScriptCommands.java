@@ -16,6 +16,9 @@ public class ScriptCommands extends JavaPlugin {
     private MessageManager messageManager;
     private ScriptLoader scriptLoader;
     private ScriptCompiler scriptCompiler;
+    private boolean updateAsked = false;
+    private String latestVersion = null;
+    private String pendingUpdateUrl = null;
     
     private String pendingUpdateUrl = null;
     private String pendingUpdateVersion = null;
@@ -162,4 +165,9 @@ public class ScriptCommands extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public MessageManager getMessageManager() { return messageManager; }
     public ScriptLoader getScriptLoader() { return scriptLoader; }
+    public boolean isUpdateAsked() { return updateAsked; }
+    public void setUpdateAsked(boolean asked) { this.updateAsked = asked; }
+    public String getLatestVersion() { return latestVersion; }
+    public String getPendingUpdateUrl() { return pendingUpdateUrl; }
+    public void setPendingUpdateUrl(String url) { this.pendingUpdateUrl = url; }
 }
