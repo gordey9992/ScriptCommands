@@ -16,12 +16,12 @@ public class ScriptCommands extends JavaPlugin {
     private MessageManager messageManager;
     private ScriptLoader scriptLoader;
     private ScriptCompiler scriptCompiler;
+    
+    // Для обновлений
     private boolean updateAsked = false;
     private String latestVersion = null;
-    private String pendingUpdateUrl = null;
-    
-    private String pendingUpdateUrl = null;
     private String pendingUpdateVersion = null;
+    private String pendingUpdateUrl = null;
     
     @Override
     public void onEnable() {
@@ -46,10 +46,23 @@ public class ScriptCommands extends JavaPlugin {
             cmdSCReload.setExecutor(new ReloadCommand(this));
         }
         
+        PluginCommand cmdUpdateYes = getCommand("scupdateyes");
+        if (cmdUpdateYes != null) {
+            cmdUpdateYes.setExecutor(new UpdateCommand(this));
+        }
+        
+        PluginCommand cmdUpdateNo = getCommand("scupdateno");
+        if (cmdUpdateNo != null) {
+            cmdUpdateNo.setExecutor(new UpdateCommand(this));
+        }
+        
         PluginCommand cmdScript = getCommand("script");
         if (cmdScript != null) {
             cmdScript.setExecutor(new ScriptCommand(this));
         }
+        
+        // Регистрация слушателя для входа игроков
+        getServer().getPluginManager().registerEvents(new UpdateJoinListener(this), this);
         
         scriptLoader.loadAllScripts();
         
@@ -70,7 +83,7 @@ public class ScriptCommands extends JavaPlugin {
         }
     }
     
-    // ========== АВТООБНОВЛЕНИЕ ==========
+    // ========== ПРОВЕРКА ОБНОВЛЕНИЙ ==========
     
     private void checkForUpdates() {
         try {
@@ -81,24 +94,18 @@ public class ScriptCommands extends JavaPlugin {
             reader.close();
             
             JSONObject obj = new JSONObject(json);
-            String latestVersion = obj.getString("tag_name");
+            latestVersion = obj.getString("tag_name");
             
             if (!latestVersion.equalsIgnoreCase(currentVersion)) {
-                String downloadUrl = obj.getJSONArray("assets").getJSONObject(0).getString("browser_download_url");
+                pendingUpdateUrl = obj.getJSONArray("assets").getJSONObject(0).getString("browser_download_url");
+                pendingUpdateVersion = latestVersion;
+                updateAsked = true;
                 
                 Bukkit.getScheduler().runTask(this, () -> {
                     getLogger().info("§e=========================================");
                     getLogger().info("§eДоступна новая версия §6" + latestVersion + "§e!");
-                    getLogger().info("§eДля обновления введите §6/script update§e");
+                    getLogger().info("§eДля обновления введите §6/scupdateyes§e");
                     getLogger().info("§e=========================================");
-                    
-                    // Уведомление игроков с правом
-                    Bukkit.getOnlinePlayers().stream()
-                        .filter(p -> p.hasPermission("scriptcommands.update.msg"))
-                        .forEach(p -> p.sendMessage("§e[ScriptCommands] Доступна новая версия " + latestVersion + "! Введите §6/script update§e"));
-                    
-                    pendingUpdateUrl = downloadUrl;
-                    pendingUpdateVersion = latestVersion;
                 });
             }
         } catch (Exception e) {
@@ -106,7 +113,7 @@ public class ScriptCommands extends JavaPlugin {
         }
     }
     
-    public void performUpdate(org.bukkit.command.CommandSender sender) {
+    public void performUpdate(CommandSender sender) {
         if (pendingUpdateUrl == null) {
             sender.sendMessage("§cНет ожидающих обновлений!");
             return;
@@ -116,14 +123,13 @@ public class ScriptCommands extends JavaPlugin {
         
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             try {
-                // Скачиваем новый JAR во временный файл
                 File pluginsDir = getDataFolder().getParentFile();
                 File tempJar = new File(pluginsDir, "ScriptCommands-update-temp.jar");
+                
                 try (InputStream in = new URL(pendingUpdateUrl).openStream()) {
                     Files.copy(in, tempJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
                 
-                // Находим текущий JAR
                 File currentJar = null;
                 for (File f : pluginsDir.listFiles()) {
                     if (f.getName().startsWith("ScriptCommands") && f.getName().endsWith(".jar") && !f.getName().contains("update")) {
@@ -137,12 +143,10 @@ public class ScriptCommands extends JavaPlugin {
                     return;
                 }
                 
-                // Заменяем JAR
                 Files.move(tempJar.toPath(), currentJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 
                 sender.sendMessage("§aФайл обновлён! Перезагружаю плагин...");
                 
-                // Перезагружаем плагин
                 Bukkit.getScheduler().runTask(this, () -> {
                     Bukkit.getPluginManager().disablePlugin(this);
                     Bukkit.getPluginManager().enablePlugin(this);
@@ -151,6 +155,7 @@ public class ScriptCommands extends JavaPlugin {
                 
                 pendingUpdateUrl = null;
                 pendingUpdateVersion = null;
+                updateAsked = false;
                 
             } catch (Exception e) {
                 sender.sendMessage("§cОшибка обновления: " + e.getMessage());
@@ -159,16 +164,16 @@ public class ScriptCommands extends JavaPlugin {
         });
     }
     
+    // ========== ГЕТТЕРЫ И СЕТТЕРЫ ==========
+    
+    public boolean isUpdateAsked() { return updateAsked; }
+    public void setUpdateAsked(boolean asked) { this.updateAsked = asked; }
+    public String getLatestVersion() { return latestVersion; }
     public String getPendingUpdateVersion() { return pendingUpdateVersion; }
+    public String getPendingUpdateUrl() { return pendingUpdateUrl; }
     
     public static ScriptCommands getInstance() { return instance; }
     public ConfigManager getConfigManager() { return configManager; }
     public MessageManager getMessageManager() { return messageManager; }
     public ScriptLoader getScriptLoader() { return scriptLoader; }
-    public boolean isUpdateAsked() { return updateAsked; }
-    public void setUpdateAsked(boolean asked) { this.updateAsked = asked; }
-    public String getLatestVersion() { return latestVersion; }
-    public String getPendingUpdateUrl() { return pendingUpdateUrl; }
-    public void setPendingUpdateUrl(String url) { this.pendingUpdateUrl = url; }
-    public String getPendingUpdateVersion() { return pendingUpdateVersion; }
 }
