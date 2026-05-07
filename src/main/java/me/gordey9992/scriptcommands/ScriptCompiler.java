@@ -7,7 +7,6 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class ScriptCompiler {
     private final JavaPlugin plugin;
@@ -20,27 +19,45 @@ public class ScriptCompiler {
     
     // ========== ИСПРАВЛЕННЫЙ ПОИСК СЕРВЕРНОГО JAR ==========
     private File findServerJar() {
-        // 1. Ищем в папке плагина (самый надёжный способ)
-        File pluginDir = plugin.getDataFolder();
-        File jarInPlugin = new File(pluginDir, "server.jar");
-        if (jarInPlugin.exists()) return jarInPlugin;
+        // Папка, где лежит плагин → plugins/
+        File pluginsDir = plugin.getDataFolder().getParentFile();
+        if (pluginsDir == null) {
+            plugin.getLogger().warning("Не удалось найти папку plugins");
+            return null;
+        }
         
-        // 2. Ищем в корне сервера (на уровень выше папки plugins)
-        File root = pluginDir.getParentFile().getParentFile();
-        if (root == null) return null;
+        // Корень сервера (на уровень выше plugins)
+        File serverRoot = pluginsDir.getParentFile();
+        if (serverRoot == null) {
+            plugin.getLogger().warning("Не удалось найти корень сервера");
+            return null;
+        }
         
-        // 3. Ищем purpur-*.jar
-        File[] purpur = root.listFiles((dir, name) -> name.matches("purpur-.*\\.jar"));
-        if (purpur != null && purpur.length > 0) return purpur[0];
+        plugin.getLogger().info("Поиск серверного JAR в: " + serverRoot.getAbsolutePath());
         
-        // 4. Ищем server.jar
-        File serverJar = new File(root, "server.jar");
-        if (serverJar.exists()) return serverJar;
+        // 1. Ищем purpur-*.jar
+        File[] purpur = serverRoot.listFiles((dir, name) -> name.matches("purpur-.*\\.jar"));
+        if (purpur != null && purpur.length > 0) {
+            plugin.getLogger().info("Найден: " + purpur[0].getName());
+            return purpur[0];
+        }
         
-        // 5. Ищем любой .jar в корне сервера
-        File[] anyJar = root.listFiles((dir, name) -> name.endsWith(".jar"));
-        if (anyJar != null && anyJar.length > 0) return anyJar[0];
+        // 2. Ищем server.jar
+        File serverJar = new File(serverRoot, "server.jar");
+        if (serverJar.exists()) {
+            plugin.getLogger().info("Найден: server.jar");
+            return serverJar;
+        }
         
+        // 3. Ищем любой .jar
+        File[] anyJar = serverRoot.listFiles((dir, name) -> name.endsWith(".jar"));
+        if (anyJar != null && anyJar.length > 0) {
+            plugin.getLogger().info("Найден любой JAR: " + anyJar[0].getName());
+            return anyJar[0];
+        }
+        
+        plugin.getLogger().warning("Серверный JAR НЕ НАЙДЕН в " + serverRoot.getAbsolutePath());
+        plugin.getLogger().warning("Скрипты не скомпилируются!");
         return null;
     }
     
@@ -101,9 +118,6 @@ public class ScriptCompiler {
                 if (configManager.isDebugEnabled()) {
                     plugin.getLogger().info("Classpath: " + serverJar.getAbsolutePath());
                 }
-            } else {
-                plugin.getLogger().warning("Серверный JAR не найден! Скрипты могут не скомпилироваться.");
-                plugin.getLogger().warning("Положите server.jar в папку plugins/ScriptCommands/");
             }
             
             JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
