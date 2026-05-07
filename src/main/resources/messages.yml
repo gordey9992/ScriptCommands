@@ -25,4 +25,14 @@ plugin:
 # Сообщения скриптов
 scripts:
   folder-created: "&7Папка для скриптов создана: &e{folder}"
-  example-created: "&7Пример скрипта
+  example-created: "&7Пример скрипта создан"
+
+# Сообщения обновлений
+update:
+  available: "&eДоступна новая версия &6{version}&e!"
+  no-update: "&cНет ожидающих обновлений!"
+  starting: "&aНачинаю обновление до версии {version}..."
+  success: "&aПлагин обновлён до версии {version}!"
+  error: "&cОшибка обновления: {error}"
+  downloaded: "&aФайл обновлён! Перезагружаю плагин..."
+  permission-msg: "&e[ScriptCommands] Доступна новая версия {version}! Введите &6/script update&e"
