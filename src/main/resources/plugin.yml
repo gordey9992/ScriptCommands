@@ -19,15 +19,10 @@ commands:
     permission: scriptcommands.reload-all
     aliases: [scr]
   
-  scupdateyes:
-    description: Установить новую версию плагина
-    usage: /scupdateyes
-    permission: scriptcommands.update
-  
-  scupdateno:
-    description: Пропустить обновление
-    usage: /scupdateno
-    permission: scriptcommands.update
+  script:
+    description: Управление плагином (обновления)
+    usage: /script update
+    permission: scriptcommands.update.msg
 
 permissions:
   scriptcommands.reload:
@@ -36,8 +31,11 @@ permissions:
   scriptcommands.reload-all:
     description: Право на полную перезагрузку
     default: op
-  scriptcommands.update:
-    description: Право на обновление плагина
+  scriptcommands.update.msg:
+    description: Получать уведомления об обновлениях
+    default: op
+  scriptcommands.update.accept:
+    description: Устанавливать обновления
     default: op
   scriptcommands.use.*:
     description: Право на использование всех динамических команд
@@ -48,4 +46,5 @@ permissions:
     children:
       scriptcommands.reload: true
       scriptcommands.reload-all: true
-      scriptcommands.update: true
+      scriptcommands.update.msg: true
+      scriptcommands.update.accept: true
