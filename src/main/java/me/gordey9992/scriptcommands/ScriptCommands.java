@@ -89,18 +89,31 @@ public class ScriptCommands extends JavaPlugin {
     private void checkForUpdates() {
         try {
             String currentVersion = getDescription().getVersion();
+            getLogger().info("=== ПРОВЕРКА ОБНОВЛЕНИЙ ===");
+            getLogger().info("Текущая версия: " + currentVersion);
+            
             URL url = new URL("https://api.github.com/repos/gordey9992/ScriptCommands/releases/latest");
             BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
             String json = reader.lines().collect(Collectors.joining());
             reader.close();
             
+            getLogger().info("Ответ GitHub: " + json);
+            
             JSONObject obj = new JSONObject(json);
             latestVersion = obj.getString("tag_name");
+            getLogger().info("Последняя версия на GitHub: " + latestVersion);
             
-            if (!latestVersion.equalsIgnoreCase(currentVersion)) {
+            // Сравниваем версии (убираем 'v' из начала тега)
+            String cleanLatest = latestVersion.startsWith("v") ? latestVersion.substring(1) : latestVersion;
+            String cleanCurrent = currentVersion;
+            
+            if (!cleanLatest.equals(cleanCurrent)) {
                 pendingUpdateUrl = obj.getJSONArray("assets").getJSONObject(0).getString("browser_download_url");
                 pendingUpdateVersion = latestVersion;
                 updateAsked = true;
+                
+                getLogger().info("Доступна новая версия: " + latestVersion);
+                getLogger().info("Ссылка: " + pendingUpdateUrl);
                 
                 Bukkit.getScheduler().runTask(this, () -> {
                     getLogger().info("§e=========================================");
@@ -108,7 +121,10 @@ public class ScriptCommands extends JavaPlugin {
                     getLogger().info("§eДля обновления введите §6/scupdateyes§e");
                     getLogger().info("§e=========================================");
                 });
+            } else {
+                getLogger().info("Установлена последняя версия.");
             }
+            
         } catch (Exception e) {
             getLogger().warning("Не удалось проверить обновления: " + e.getMessage());
         }
@@ -126,6 +142,8 @@ public class ScriptCommands extends JavaPlugin {
             try {
                 File pluginsDir = getDataFolder().getParentFile();
                 File tempJar = new File(pluginsDir, "ScriptCommands-update-temp.jar");
+                
+                getLogger().info("Скачивание обновления из " + pendingUpdateUrl);
                 
                 try (InputStream in = new URL(pendingUpdateUrl).openStream()) {
                     Files.copy(in, tempJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -165,7 +183,7 @@ public class ScriptCommands extends JavaPlugin {
         });
     }
     
-    // ========== ГЕТТЕРЫ И СЕТТЕРЫ ==========
+    // ========== ГЕТТЕРЫ ==========
     
     public boolean isUpdateAsked() { return updateAsked; }
     public void setUpdateAsked(boolean asked) { this.updateAsked = asked; }
